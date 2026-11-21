@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "type": "workflow",
+  "name": "workflow-minimal",
+  "version": "1.0.0",
+  "description": "Minimal phase-gated workflow pack with feature flow and reviewer agent.",
+  "license": "MIT",
+  "requires": {
+    "format": "^1.0.0"
+  },
+  "depends": {
+    "stack-typescript": "^1.0.0"
+  },
+  "defaults": {
+    "autonomy": "gated",
+    "flows": {
+      "default": "feature"
+    }
+  }
+}

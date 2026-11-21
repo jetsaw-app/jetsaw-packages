@@ -1,0 +1,11 @@
+{
+  "name": "feature",
+  "description": "Standard gated feature flow from ticket study to pull request.",
+  "phases": [
+    { "id": "intake", "step": "intake" },
+    { "id": "study", "step": "study" },
+    { "id": "implement", "step": "implement" },
+    { "id": "qa", "step": "qa" },
+    { "id": "pr", "step": "pr", "gate": "explicit-approval" }
+  ]
+}

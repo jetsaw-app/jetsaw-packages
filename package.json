@@ -1,0 +1,16 @@
+{
+  "name": "jetsaw-packages",
+  "version": "1.0.0",
+  "description": "Schemas, examples, and validator CLI for authoring Jetsaw packs and connector plugins.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "jetsaw-pack": "./bin/jetsaw-pack.mjs"
+  },
+  "scripts": {
+    "validate:examples": "node bin/jetsaw-pack.mjs validate examples/stack-typescript && node bin/jetsaw-pack.mjs validate examples/workflow-minimal && node bin/jetsaw-pack.mjs validate examples/plugin-tracker-stub"
+  }
+}

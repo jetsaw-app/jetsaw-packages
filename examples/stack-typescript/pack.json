@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "type": "stack",
+  "name": "stack-typescript",
+  "version": "1.0.0",
+  "description": "TypeScript & Node.js conventions, typecheck QA defaults, and guardrails.",
+  "license": "MIT",
+  "requires": {
+    "format": "^1.0.0"
+  },
+  "detect": {
+    "files": ["tsconfig.json", "package.json"],
+    "dependencies": ["typescript"]
+  },
+  "defaults": {
+    "qa": {
+      "commands": ["npm run typecheck", "npm test"]
+    }
+  }
+}

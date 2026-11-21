@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "name": "tracker-acme-stub",
+  "version": "1.0.0",
+  "description": "Minimal JSON-RPC 2.0 connector plugin stub for a custom issue tracker.",
+  "protocol": "^1",
+  "provides": {
+    "tracker": "acme"
+  },
+  "capabilities": [
+    "tracker.read"
+  ],
+  "kinds": {
+    "tracker": {
+      "title": "Acme Tracker",
+      "fields": [
+        {
+          "name": "baseUrl",
+          "label": "API URL",
+          "type": "url",
+          "required": true,
+          "placeholder": "https://api.acme.example.com"
+        }
+      ],
+      "credential": {
+        "label": "Acme API token"
+      }
+    }
+  },
+  "command": ["node", "main.mjs"],
+  "permissions": {
+    "hosts": ["api.acme.example.com"],
+    "credentials": ["ACME_API_TOKEN"]
+  }
+}

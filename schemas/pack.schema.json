@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jetsaw.app/schemas/pack.schema.json",
+  "title": "Jetsaw Pack Manifest (pack.json)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "type", "name", "version"],
+  "properties": {
+    "schema": {
+      "const": 1,
+      "description": "Manifest schema version. Must be 1."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["stack", "integration", "workflow", "bundle"],
+      "description": "Pack type. Controls allowed folders, defaults, and dependency hierarchy."
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+      "description": "Unique lowercase pack identifier."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$",
+      "description": "Semantic version (X.Y.Z)."
+    },
+    "description": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "description": "Pack format semver range (current format: 1.0.0)."
+        },
+        "connectors": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Required connector plugin names mapped to version ranges."
+        }
+      }
+    },
+    "depends": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+      },
+      "additionalProperties": { "type": "string" },
+      "description": "Other packs this pack builds on, mapped to version ranges."
+    },
+    "detect": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Stack packs only: repository signals used to auto-detect this pack.",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Default project settings contributed by this pack (restricted by pack type)."
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Optional declared parameters for pack configuration."
+    }
+  }
+}
