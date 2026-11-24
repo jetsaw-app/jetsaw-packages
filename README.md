@@ -27,6 +27,24 @@ Every Jetsaw package is distributed as `<kind>-<name>-<version>.tar.gz` (optiona
    node bin/jetsaw-pack.mjs build examples/stack-typescript --out dist
    ```
 
+## Publish for Your Team on Jetsaw Cloud
+
+An organization on the Team plan publishes its packages from the Cloud dashboard, **Packages**. Private packages are seen only by the organization's members; public ones by anyone. Cloud only accepts a package signed with a key an admin registered, and Jetsaw for Mac checks each one against it.
+
+1. Make a signing key, once per team (the private half stays with you; Cloud never sees it):
+   ```sh
+   node bin/jetsaw-pack.mjs keygen --out ~/.jetsaw/team-key.pem
+   ```
+   It prints the public key, `ed25519:…`. An admin pastes it in **Packages → Signing keys → Add key**.
+2. Build and sign your package (`--key` writes `<archive>.tar.gz.sig` beside the archive):
+   ```sh
+   node bin/jetsaw-pack.mjs build my-pack --out dist --key ~/.jetsaw/team-key.pem
+   ```
+   An archive built earlier is signed with `node bin/jetsaw-pack.mjs sign dist/<archive>.tar.gz --key ~/.jetsaw/team-key.pem`.
+3. In **Packages → Publish a package**, upload the `.tar.gz` and its `.sig` and choose **Private**. A published version never changes: to fix it, bump `version` and publish again.
+
+Members then find it in Jetsaw for Mac, **Settings → Packages**, with a button to install it.
+
 ## Pack Types & Allowed Contents
 
 A pack's `type` fixes which top-level folders, dependencies, and project `defaults` it may provide:

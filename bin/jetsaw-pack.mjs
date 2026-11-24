@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, createPrivateKey, createPublicKey, generateKeyPairSync, sign as cryptoSign } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -208,28 +208,80 @@ async function buildArchive(info, outDir) {
   return { archive, sha256 };
 }
 
+// Signing (Jetsaw Cloud, private or public packages). A key is Ed25519: the private half a PKCS#8 PEM file only its
+// owner reads, the public half `ed25519:<base64 of its 32 bytes>`, which an organization admin registers on Cloud. A
+// signature is the base64 of the 64-byte Ed25519 signature of the archive's bytes, on one line, in `<archive>.sig`:
+// the spelling Cloud and the app check.
+function publicKeyOf(keyObject) {
+  const raw = createPublicKey(keyObject).export({ format: "der", type: "spki" }).subarray(-32);
+  return `ed25519:${raw.toString("base64")}`;
+}
+
+function generateKey(out) {
+  const file = path.resolve(out);
+  if (fs.existsSync(file)) throw new Error(`${file} exists; a key is never overwritten`);
+  const { privateKey } = generateKeyPairSync("ed25519");
+  fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
+  fs.writeFileSync(file, privateKey.export({ format: "pem", type: "pkcs8" }), { mode: 0o600, flag: "wx" });
+  return { file, publicKey: publicKeyOf(privateKey) };
+}
+
+function loadKey(keyFile) {
+  const key = createPrivateKey(fs.readFileSync(path.resolve(keyFile)));
+  if (key.asymmetricKeyType !== "ed25519") throw new Error(`${keyFile} is not an Ed25519 private key`);
+  return key;
+}
+
+function signArchive(archive, keyFile) {
+  const key = loadKey(keyFile);
+  const signature = cryptoSign(null, fs.readFileSync(archive), key).toString("base64");
+  const sigFile = `${archive}.sig`;
+  fs.writeFileSync(sigFile, `${signature}\n`);
+  return { sigFile, publicKey: publicKeyOf(key) };
+}
+
+const USAGE = `Usage:
+  jetsaw-pack validate <folder>
+  jetsaw-pack build <folder> [--out <dir>] [--key <key.pem>]
+  jetsaw-pack keygen --out <key.pem>
+  jetsaw-pack sign <archive.tar.gz> --key <key.pem>`;
+
 const args = process.argv.slice(2);
 const cmd = args.shift();
-const outIdx = args.indexOf("--out");
-let outDir = "dist";
-if (outIdx >= 0) {
-  outDir = args[outIdx + 1] ?? "dist";
-  args.splice(outIdx, 2);
+function option(name) {
+  const i = args.indexOf(name);
+  if (i < 0) return undefined;
+  const value = args[i + 1];
+  args.splice(i, 2);
+  return value;
 }
+const outDir = option("--out");
+const keyFile = option("--key");
 const target = args[0];
 
-if (!cmd || !target || !["validate", "build"].includes(cmd)) {
-  console.error("Usage:\n  jetsaw-pack validate <folder>\n  jetsaw-pack build <folder> [--out <dir>]");
+const needsTarget = ["validate", "build", "sign"].includes(cmd);
+if (!["validate", "build", "keygen", "sign"].includes(cmd) || (needsTarget && !target)
+  || (cmd === "keygen" && !outDir) || (cmd === "sign" && !keyFile)) {
+  console.error(USAGE);
   process.exit(1);
 }
 
 try {
-  const info = inspectPackage(target);
-  if (cmd === "validate") {
-    console.log(`OK  ${info.kind} ${info.name}@${info.version} (${info.entries.length} files)`);
+  if (cmd === "keygen") {
+    const { file, publicKey } = generateKey(outDir);
+    console.log(`private key: ${file} (keep it secret and backed up; it never leaves your team)\npublic key:  ${publicKey}`);
+  } else if (cmd === "sign") {
+    const { sigFile, publicKey } = signArchive(target, keyFile);
+    console.log(`SIGNED  ${target} -> ${sigFile}\nkey     ${publicKey}`);
   } else {
-    const { archive, sha256 } = await buildArchive(info, outDir);
-    console.log(`BUILT  ${info.kind} ${info.name}@${info.version} -> ${archive}\nsha256 ${sha256}`);
+    const info = inspectPackage(target);
+    if (cmd === "validate") {
+      console.log(`OK  ${info.kind} ${info.name}@${info.version} (${info.entries.length} files)`);
+    } else {
+      const { archive, sha256 } = await buildArchive(info, outDir ?? "dist");
+      console.log(`BUILT  ${info.kind} ${info.name}@${info.version} -> ${archive}\nsha256 ${sha256}`);
+      if (keyFile) console.log(`SIGNED -> ${signArchive(archive, keyFile).sigFile}`);
+    }
   }
 } catch (err) {
   console.error(err instanceof Error ? err.message : String(err));
